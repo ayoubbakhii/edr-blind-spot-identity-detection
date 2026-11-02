@@ -1,0 +1,18 @@
+# Secrets
+.env
+*.keystore
+*.pem
+*.key
+
+# Logs and local artefacts
+*.log
+rules.ndjson
+users.txt
+*.kirbi
+*hashes*.txt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
