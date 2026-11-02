@@ -1,0 +1,52 @@
+# Elastic Stack for the lab (VM4, 192.168.56.40)
+# Usage:  cp .env.example .env  (set the passwords)  &&  docker compose up -d
+# Lab only: HTTP without TLS on an isolated host-only network.
+
+services:
+  # One-shot job: waits for Elasticsearch, then sets the kibana_system password
+  setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    depends_on:
+      - elasticsearch
+    command:
+      - bash
+      - -c
+      - |
+        until curl -s -u "elastic:${ELASTIC_PASSWORD}" http://elasticsearch:9200 >/dev/null; do sleep 5; done
+        curl -s -X POST -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" \
+          http://elasticsearch:9200/_security/user/kibana_system/_password \
+          -d "{\"password\":\"${KIBANA_PASSWORD}\"}"
+        echo "kibana_system password set"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true            # required by the Kibana detection engine
+      - xpack.security.http.ssl.enabled=false  # lab only
+      - xpack.license.self_generated.type=trial
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+      - KIBANA_ENCRYPTION_KEY=${KIBANA_ENCRYPTION_KEY}
+    ports:
+      - "5601:5601"
+    volumes:
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    restart: unless-stopped
+
+volumes:
+  esdata:

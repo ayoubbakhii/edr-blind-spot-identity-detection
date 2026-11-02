@@ -1,0 +1,40 @@
+{
+  "rule_id": "edr-blindspot-asrep-roasting",
+  "name": "AS-REP Roasting - TGT requested without pre-authentication",
+  "description": "Detects a Kerberos TGT request (event 4768) with pre-authentication type 0. A healthy domain almost never issues these; an attacker requests them to obtain an AS-REP hash and crack it offline.",
+  "type": "query",
+  "language": "kuery",
+  "index": ["winlogbeat-*"],
+  "query": "event.code: \"4768\" and winlog.event_data.PreAuthType: \"0\"",
+  "interval": "1m",
+  "from": "now-2m",
+  "severity": "high",
+  "risk_score": 73,
+  "enabled": true,
+  "tags": ["Identity", "Kerberos", "Active Directory", "SOAR: auto-response"],
+  "false_positives": ["Legacy accounts deliberately configured without Kerberos pre-authentication (should be remediated)."],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access",
+        "reference": "https://attack.mitre.org/tactics/TA0006/"
+      },
+      "technique": [
+        {
+          "id": "T1558",
+          "name": "Steal or Forge Kerberos Tickets",
+          "reference": "https://attack.mitre.org/techniques/T1558/",
+          "subtechnique": [
+            {
+              "id": "T1558.004",
+              "name": "AS-REP Roasting",
+              "reference": "https://attack.mitre.org/techniques/T1558/004/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

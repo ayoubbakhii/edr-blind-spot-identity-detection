@@ -1,0 +1,55 @@
+// =====================================================================
+// Microsoft Sentinel translations of the lab's Kibana detection rules
+// Table: SecurityEvent (Windows Security Events via AMA / legacy agent)
+// Status: written as SC-200 practice, NOT run in the lab. Validate in
+// your own workspace before turning them into analytics rules.
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// 1. AS-REP Roasting (T1558.004)
+//    TGT request (4768) without Kerberos pre-authentication
+// ---------------------------------------------------------------------
+SecurityEvent
+| where EventID == 4768
+| where EventData has '<Data Name="PreAuthType">0</Data>'
+| project TimeGenerated, Computer, TargetUserName, IpAddress, EventID
+| extend AccountName = tostring(split(TargetUserName, "@")[0])
+
+
+// ---------------------------------------------------------------------
+// 2. Kerberoasting (T1558.003)
+//    Service ticket request (4769) with RC4 encryption (0x17)
+// ---------------------------------------------------------------------
+SecurityEvent
+| where EventID == 4769
+| where EventData has '<Data Name="TicketEncryptionType">0x17</Data>'
+| where TargetUserName !endswith "$"          // ignore machine accounts
+| project TimeGenerated, Computer, TargetUserName, IpAddress, EventData
+| extend AccountName = tostring(split(TargetUserName, "@")[0])
+
+
+// ---------------------------------------------------------------------
+// 3. Password spraying (T1110.003)
+//    One source IP with network logons on >= 3 distinct accounts
+// ---------------------------------------------------------------------
+SecurityEvent
+| where EventID in (4624, 4625)
+| where LogonType == 3
+| where isnotempty(IpAddress) and IpAddress != "-"
+| summarize DistinctAccounts = dcount(TargetUserName),
+            Accounts = make_set(TargetUserName, 20),
+            Failures = countif(EventID == 4625)
+          by IpAddress, bin(TimeGenerated, 5m)
+| where DistinctAccounts >= 3
+
+
+// ---------------------------------------------------------------------
+// 4. Honeypot service account (T1558.003)
+//    Any service ticket request for the decoy account svc_sqladmin
+// ---------------------------------------------------------------------
+SecurityEvent
+| where EventID == 4769
+| where EventData has '<Data Name="ServiceName">svc_sqladmin</Data>'
+| project TimeGenerated, Computer, TargetUserName, IpAddress
+| extend AccountName = tostring(split(TargetUserName, "@")[0])

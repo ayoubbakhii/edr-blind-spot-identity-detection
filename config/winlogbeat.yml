@@ -1,0 +1,18 @@
+# Winlogbeat on the domain controller (VM2, 192.168.56.20)
+# Version must match the Elastic Stack (9.4.2 in the lab).
+# Store the password in the Winlogbeat keystore instead of this file:
+#   .\winlogbeat.exe keystore create
+#   .\winlogbeat.exe keystore add ES_PWD
+
+winlogbeat.event_logs:
+  - name: Security          # 4624, 4625, 4768, 4769 ...
+  - name: System
+  - name: Microsoft-Windows-Sysmon/Operational
+
+output.elasticsearch:
+  hosts: ["http://192.168.56.40:9200"]
+  username: "elastic"       # lab only; use a dedicated least-privilege writer role in production
+  password: "${ES_PWD}"
+
+setup.kibana:
+  host: "http://192.168.56.40:5601"

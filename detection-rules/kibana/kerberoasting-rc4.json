@@ -1,0 +1,40 @@
+{
+  "rule_id": "edr-blindspot-kerberoasting-rc4",
+  "name": "Kerberoasting - Service ticket requested with RC4 encryption",
+  "description": "Detects a Kerberos service ticket request (event 4769) using RC4 (0x17). Attackers force RC4 to make offline cracking of the service account's password easier; legitimate modern traffic uses AES (0x12).",
+  "type": "query",
+  "language": "kuery",
+  "index": ["winlogbeat-*"],
+  "query": "event.code: \"4769\" and winlog.event_data.TicketEncryptionType: \"0x17\"",
+  "interval": "1m",
+  "from": "now-2m",
+  "severity": "high",
+  "risk_score": 73,
+  "enabled": true,
+  "tags": ["Identity", "Kerberos", "Active Directory", "SOAR: auto-response"],
+  "false_positives": ["Legacy applications or devices that only support RC4. Inventory and migrate them to AES."],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access",
+        "reference": "https://attack.mitre.org/tactics/TA0006/"
+      },
+      "technique": [
+        {
+          "id": "T1558",
+          "name": "Steal or Forge Kerberos Tickets",
+          "reference": "https://attack.mitre.org/techniques/T1558/",
+          "subtechnique": [
+            {
+              "id": "T1558.003",
+              "name": "Kerberoasting",
+              "reference": "https://attack.mitre.org/techniques/T1558/003/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

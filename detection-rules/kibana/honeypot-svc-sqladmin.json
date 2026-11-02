@@ -1,0 +1,40 @@
+{
+  "rule_id": "edr-blindspot-honeypot-svc-sqladmin",
+  "name": "Honeypot - Service ticket requested for decoy account svc_sqladmin",
+  "description": "Detects any Kerberos service ticket request (event 4769) for the decoy service account svc_sqladmin. No legitimate process ever requests a ticket for this account, so every hit is malicious: structurally zero false positives.",
+  "type": "query",
+  "language": "kuery",
+  "index": ["winlogbeat-*"],
+  "query": "event.code: \"4769\" and winlog.event_data.ServiceName: \"svc_sqladmin\"",
+  "interval": "1m",
+  "from": "now-2m",
+  "severity": "high",
+  "risk_score": 73,
+  "enabled": true,
+  "tags": ["Identity", "Kerberos", "Deception", "SOAR: auto-response"],
+  "false_positives": ["None expected by design. Investigate every alert."],
+  "threat": [
+    {
+      "framework": "MITRE ATT&CK",
+      "tactic": {
+        "id": "TA0006",
+        "name": "Credential Access",
+        "reference": "https://attack.mitre.org/tactics/TA0006/"
+      },
+      "technique": [
+        {
+          "id": "T1558",
+          "name": "Steal or Forge Kerberos Tickets",
+          "reference": "https://attack.mitre.org/techniques/T1558/",
+          "subtechnique": [
+            {
+              "id": "T1558.003",
+              "name": "Kerberoasting",
+              "reference": "https://attack.mitre.org/techniques/T1558/003/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
